@@ -4,10 +4,10 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Talka - English Assistant</title>
-    <meta name="description" content="Talka is a lightweight web app that corrects English sentences and explains the corrections. Enter your OpenAI API key and a sentence to get a corrected version and a short explanation.">
+    <meta name="description" content="Talka is a lightweight web app that corrects English sentences and explains the corrections. Enter your Google Gemini API key and a sentence to get a corrected version and a short explanation.">
     <!-- Open Graph / Social -->
     <meta property="og:title" content="Talka — English Correction Assistant">
-    <meta property="og:description" content="Correct your English sentences and get brief explanations. Works with your OpenAI API key.">
+    <meta property="og:description" content="Correct your English sentences and get brief explanations. Works with your Google Gemini API key.">
     <meta property="og:type" content="website">
     <meta name="twitter:card" content="summary">
     <style>
@@ -293,9 +293,14 @@
             const sentence = sentenceInput.value.trim();
             
             // Validate inputs
-            // Allow users to test without key when not in localhost
-            if (!apiKey && window.location.hostname !== 'localhost') {
-                showError("Please enter your OpenAI API key");
+            if (!apiKey) {
+                showError("Please enter your Google Gemini API key");
+                return;
+            }
+
+            // Validate Gemini API key format (should start with "AI")
+            if (!apiKey.startsWith('AI')) {
+                showError("Invalid Gemini API key format. Key should start with 'AI'");
                 return;
             }
             
@@ -363,8 +368,8 @@
 
         // API Call to Google Gemini
         async function getCorrection(apiKey, tone, sentence) {
-            if (!apiKey) {
-                throw new Error("API key is missing. Please enter your Gemini API key.");
+            if (!apiKey || !apiKey.startsWith('AI')) {
+                throw new Error("Invalid or missing Gemini API key. Please enter a valid key that starts with 'AI'.");
             }
             
             const prompt = `Correct this English sentence in a ${tone} tone: "${sentence}"\nProvide your response in this format:\nCorrected: [corrected sentence]\nExplanation: [brief explanation of changes]`;
