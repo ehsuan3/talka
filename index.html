@@ -291,11 +291,50 @@
 
         // Handle correction button click
         correctBtn.addEventListener('click', async () => {
-            const apiKey = apiKeyInput.value.trim();
-            const tone = toneSelect.value;
-            const sentence = sentenceInput.value.trim();
-            
-            console.log('Making request with tone:', tone); // For debugging
+            // Show loading state
+            spinner.style.display = 'block';
+            correctBtn.disabled = true;
+            errorDiv.style.display = 'none';
+            errorDiv.textContent = '';
+            resultDiv.style.display = 'none';
+
+            try {
+                console.log('Button clicked');
+                const apiKey = apiKeyInput.value.trim();
+                const tone = toneSelect.value;
+                const sentence = sentenceInput.value.trim();
+                
+                console.log('Input values:', { tone, sentence, apiKeyLength: apiKey.length });
+
+                // Validate inputs
+                if (!apiKey) {
+                    throw new Error("Please enter your Google Gemini API key");
+                }
+
+                if (!apiKey.startsWith('AIza')) {
+                    throw new Error("Invalid Gemini API key format. Key should start with 'AIza'. Get your API key at https://makersuite.google.com/app/apikey");
+                }
+                
+                if (!sentence) {
+                    throw new Error("Please enter a sentence to correct");
+                }
+
+                const data = await getCorrection(apiKey, tone, sentence);
+                console.log('API Response:', data);
+                
+                // Display results
+                correctedSentence.textContent = data.corrected;
+                explanation.textContent = data.explanation;
+                resultDiv.style.display = 'block';
+
+            } catch (error) {
+                console.error('Error:', error);
+                showError(error.message || "An error occurred. Please try again.");
+            } finally {
+                // Hide spinner and re-enable button
+                spinner.style.display = 'none';
+                correctBtn.disabled = false;
+            }
             
             // Validate inputs
             if (!apiKey) {
@@ -339,12 +378,16 @@
                 resultDiv.style.display = 'block';
                 
             } catch (error) {
+                console.error('Error:', error);
                 showError(error.message || "An error occurred. Please try again.");
             } finally {
                 // Hide spinner and re-enable button
                 spinner.style.display = 'none';
                 correctBtn.disabled = false;
             }
+            
+            // Log completion
+            console.log('Request completed');
         });
 
         // Copy corrected text to clipboard
