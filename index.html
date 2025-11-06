@@ -414,21 +414,28 @@
                 }
 
                 const data = await response.json();
+                console.log('Full API response:', data); // Debug the full response
 
                 if (!data.candidates || data.candidates.length === 0) {
                     throw new Error("No response generated. Please try again.");
                 }
 
+                // Check if the response structure is valid
+                if (!data.candidates[0] || !data.candidates[0].content || !data.candidates[0].content.parts) {
+                    console.error('Unexpected response structure:', data);
+                    throw new Error("Unexpected API response format. Please try again.");
+                }
+
                 // Extract from Gemini response format
                 const result = data.candidates[0].content.parts[0].text.trim();
-                console.log('Gemini response:', result); // For debugging
+                console.log('Gemini response text:', result); // For debugging
 
                 // Parse the response looking for Corrected: and Explanation: markers
                 const correctedMatch = result.match(/Corrected:\s*(.+?)(?=\n|$)/i);
                 const explanationMatch = result.match(/Explanation:\s*(.+?)(?=\n|$)/i);
 
-                const corrected = correctedMatch ? correctedMatch[1].trim() : "No correction provided";
-                const explanationText = explanationMatch ? explanationMatch[1].trim() : "No explanation provided";
+                const corrected = correctedMatch ? correctedMatch[1].trim() : result.split('\n')[0];
+                const explanationText = explanationMatch ? explanationMatch[1].trim() : (result.split('\n')[1] || "No explanation provided");
 
                 return {
                     corrected: corrected || "Correction not provided",
