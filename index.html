@@ -203,8 +203,11 @@
         <main>
             <div class="form-group">
                 <label for="api-key">Google AI (Gemini) API Key:</label>
-                <input type="password" id="api-key" placeholder="Enter your Gemini API key" />
-                <label>
+                <input type="password" id="api-key" placeholder="Enter your Gemini API key (starts with AIza)" />
+                <div style="margin-top: 5px; font-size: 12px;">
+                    <a href="https://makersuite.google.com/app/apikey" target="_blank" style="color: var(--teal);">Get your Gemini API key here</a>
+                </div>
+                <label style="margin-top: 10px;">
                     <input type="checkbox" id="save-key" />
                     Save to local storage
                 </label>
@@ -298,9 +301,9 @@
                 return;
             }
 
-            // Validate Gemini API key format (should start with "AI")
-            if (!apiKey.startsWith('AI')) {
-                showError("Invalid Gemini API key format. Key should start with 'AI'");
+            // Validate Gemini API key format (should start with "AIza")
+            if (!apiKey.startsWith('AIza')) {
+                showError("Invalid Gemini API key format. Key should start with 'AIza'. Get your API key at https://makersuite.google.com/app/apikey");
                 return;
             }
             
@@ -366,10 +369,11 @@
             errorDiv.style.display = 'block';
         }
 
-        // API Call to Google Gemini
+            // API Call to Google Gemini
         async function getCorrection(apiKey, tone, sentence) {
-            if (!apiKey || !apiKey.startsWith('AI')) {
-                throw new Error("Invalid or missing Gemini API key. Please enter a valid key that starts with 'AI'.");
+            // Validate API key format for Google Cloud (should start with AIza)
+            if (!apiKey || !apiKey.startsWith('AIza')) {
+                throw new Error("Invalid Gemini API key format. Please enter a valid Google Cloud API key (starts with 'AIza').");
             }
             
             const prompt = `Correct this English sentence in a ${tone} tone: "${sentence}"\nProvide your response in this format:\nCorrected: [corrected sentence]\nExplanation: [brief explanation of changes]`;
@@ -391,10 +395,9 @@
 
                 if (!response.ok) {
                     const errorData = await response.json();
-                    throw new Error(errorData.error?.message || 'Failed to get response from Gemini API');
-                }
-            
-            if (!response.ok) {
+                    const errorMessage = errorData.error?.message || 'Failed to get response from Gemini API';
+                    throw new Error(`Gemini API Error: ${errorMessage}. Get your API key at https://makersuite.google.com/app/apikey`);
+                }            if (!response.ok) {
                 const errorData = await response.json();
                 throw new Error(errorData.error?.message || 'API request failed');
             }
