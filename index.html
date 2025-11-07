@@ -3,11 +3,11 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Talka - English Assistant</title>
-    <meta name="description" content="Talka is a lightweight web app that corrects English sentences and explains the corrections. Enter your Google Gemini API key and a sentence to get a corrected version and a short explanation.">
+    <title>Talka - British English Teacher for Taiwanese Students</title>
+    <meta name="description" content="Talka is a professional British English teacher specializing in helping Taiwanese students. Get corrections, identify Chinese English patterns, and learn to express yourself like a native speaker.">
     <!-- Open Graph / Social -->
-    <meta property="og:title" content="Talka — English Correction Assistant">
-    <meta property="og:description" content="Correct your English sentences and get brief explanations. Works with your Google Gemini API key.">
+    <meta property="og:title" content="Talka — British English Teacher for Taiwanese Students">
+    <meta property="og:description" content="Professional British English corrections with detailed explanations tailored for Taiwanese learners. Identify Chinese English patterns and learn native expressions.">
     <meta property="og:type" content="website">
     <meta name="twitter:card" content="summary">
     <style>
@@ -197,7 +197,7 @@
     <div class="container">
         <header>
             <h1>Talka</h1>
-            <p class="tagline">English Correction Assistant</p>
+            <p class="tagline">Your British English Teacher for Taiwanese Students</p>
         </header>
         
         <main>
@@ -372,7 +372,19 @@
                 throw new Error("Invalid Gemini API key format. Please enter a valid Google Cloud API key (starts with 'AIza').");
             }
             
-            const prompt = `Correct this English sentence in a ${tone} tone: "${sentence}"\nProvide your response in this format:\nCorrected: [corrected sentence]\nExplanation: [brief explanation of changes]`;
+            const prompt = `You are Talka, a professional British English teacher who specializes in helping Taiwanese students. You understand their common pain points and can identify "Chinese English" patterns (direct translations from Chinese that sound unnatural in English).
+
+When you see the student's sentence, analyze it carefully:
+- If it contains Chinese English patterns, explain how to express it like a native British English speaker
+- Point out the specific grammar issues and why they occur
+- Provide tips to avoid similar mistakes in the future
+- Give clear examples to illustrate the correct usage
+
+Student's sentence (${tone} tone): "${sentence}"
+
+Provide your response in this format:
+Corrected: [corrected sentence in British English]
+Explanation: [detailed explanation including: what was wrong, why it's wrong for Taiwanese learners, how natives express it, tips to remember, and relevant examples]`;
             
             try {
                 const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`, {
