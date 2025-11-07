@@ -432,10 +432,16 @@ Explanation: [detailed explanation including: what was wrong, why it's wrong for
                     throw new Error("No response generated. Please try again.");
                 }
 
+                // Check if content was blocked by safety filters
+                if (data.candidates[0].finishReason === 'SAFETY') {
+                    throw new Error("Response was blocked by safety filters. Please try rephrasing your sentence.");
+                }
+
                 // Check if the response structure is valid
                 if (!data.candidates[0] || !data.candidates[0].content || !data.candidates[0].content.parts) {
                     console.error('Unexpected response structure:', data);
-                    throw new Error("Unexpected API response format. Please try again.");
+                    console.error('Finish reason:', data.candidates[0]?.finishReason);
+                    throw new Error(`API returned unexpected format. Reason: ${data.candidates[0]?.finishReason || 'unknown'}. Please try again.`);
                 }
 
                 // Extract from Gemini response format
@@ -443,15 +449,20 @@ Explanation: [detailed explanation including: what was wrong, why it's wrong for
                 console.log('Gemini response text:', result); // For debugging
 
                 // Parse the response looking for Corrected: and Explanation: markers
-                const correctedMatch = result.match(/Corrected:\s*(.+?)(?=\n|$)/i);
-                const explanationMatch = result.match(/Explanation:\s*(.+?)(?=\n|$)/i);
+                // Updated regex to capture everything after "Explanation:" including newlines
+                const correctedMatch = result.match(/Corrected:\s*(.+?)(?=\nExplanation:|$)/is);
+                const explanationMatch = result.match(/Explanation:\s*(.+?)$/is);
 
-                const corrected = correctedMatch ? correctedMatch[1].trim() : result.split('\n')[0];
-                const explanationText = explanationMatch ? explanationMatch[1].trim() : (result.split('\n')[1] || "No explanation provided");
+                let corrected = correctedMatch ? correctedMatch[1].trim() : result.split('\n')[0];
+                let explanationText = explanationMatch ? explanationMatch[1].trim() : (result.split('\n').slice(1).join('\n').trim() || "No explanation provided");
+
+                // Remove any leading/trailing quotes or asterisks that AI might add
+                corrected = corrected.replace(/^["'\*]+|["'\*]+$/g, '').trim();
+                explanationText = explanationText.replace(/^["'\*]+|["'\*]+$/g, '').trim();
 
                 return {
-                    corrected: corrected || "Correction not provided",
-                    explanation: explanationText || "Explanation not provided"
+                    corrected: corrected || result.split('\n')[0] || "Correction not provided",
+                    explanation: explanationText || "No explanation provided"
                 };
             } catch (error) {
                 console.error('Gemini API call error:', error);
