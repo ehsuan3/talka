@@ -413,7 +413,19 @@ Explanation: [detailed explanation including: what was wrong, why it's wrong for
                         "safetySettings": [
                             {
                                 "category": "HARM_CATEGORY_HARASSMENT",
-                                "threshold": "BLOCK_MEDIUM_AND_ABOVE"
+                                "threshold": "BLOCK_ONLY_HIGH"
+                            },
+                            {
+                                "category": "HARM_CATEGORY_HATE_SPEECH",
+                                "threshold": "BLOCK_ONLY_HIGH"
+                            },
+                            {
+                                "category": "HARM_CATEGORY_SEXUALLY_EXPLICIT",
+                                "threshold": "BLOCK_ONLY_HIGH"
+                            },
+                            {
+                                "category": "HARM_CATEGORY_DANGEROUS_CONTENT",
+                                "threshold": "BLOCK_ONLY_HIGH"
                             }
                         ]
                     })
@@ -434,14 +446,25 @@ Explanation: [detailed explanation including: what was wrong, why it's wrong for
 
                 // Check if content was blocked by safety filters
                 if (data.candidates[0].finishReason === 'SAFETY') {
+                    console.error('Safety ratings:', data.candidates[0].safetyRatings);
                     throw new Error("Response was blocked by safety filters. Please try rephrasing your sentence.");
                 }
 
                 // Check if the response structure is valid
                 if (!data.candidates[0] || !data.candidates[0].content || !data.candidates[0].content.parts) {
-                    console.error('Unexpected response structure:', data);
+                    console.error('Unexpected response structure:', JSON.stringify(data, null, 2));
+                    console.error('Candidate:', JSON.stringify(data.candidates[0], null, 2));
                     console.error('Finish reason:', data.candidates[0]?.finishReason);
-                    throw new Error(`API returned unexpected format. Reason: ${data.candidates[0]?.finishReason || 'unknown'}. Please try again.`);
+                    console.error('Has content?', !!data.candidates[0]?.content);
+                    console.error('Has parts?', !!data.candidates[0]?.content?.parts);
+
+                    // Check for other finish reasons
+                    const finishReason = data.candidates[0]?.finishReason;
+                    if (finishReason === 'MAX_TOKENS' || finishReason === 'RECITATION') {
+                        throw new Error(`Response incomplete. Reason: ${finishReason}. Try a shorter sentence.`);
+                    }
+
+                    throw new Error(`API returned unexpected format. Reason: ${finishReason || 'unknown'}. Check console for details.`);
                 }
 
                 // Extract from Gemini response format
