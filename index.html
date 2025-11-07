@@ -308,13 +308,9 @@
 
                 // Validate inputs
                 if (!apiKey) {
-                    throw new Error("Please enter your Google Gemini API key");
+                    throw new Error("Please enter your xAI Grok API key");
                 }
 
-                if (!apiKey.startsWith('AIza')) {
-                    throw new Error("Invalid Gemini API key format. Key should start with 'AIza'. Get your API key at https://makersuite.google.com/app/apikey");
-                }
-                
                 if (!sentence) {
                     throw new Error("Please enter a sentence to correct");
                 }
