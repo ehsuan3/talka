@@ -202,10 +202,10 @@
         
         <main>
             <div class="form-group">
-                <label for="api-key">Monica API Key:</label>
-                <input type="password" id="api-key" placeholder="Enter your Monica API key (starts with sk-)" />
+                <label for="api-key">Google Gemini API Key:</label>
+                <input type="password" id="api-key" placeholder="Enter your Gemini API key (starts with AIza)" value="AIzaSyDmVJOd9-b6fPNpfqaXjRgIrlYYbQzg8gE" />
                 <div style="margin-top: 5px; font-size: 12px;">
-                    <a href="https://platform.monica.im" target="_blank" style="color: var(--teal);">Get your Monica API key here</a>
+                    <a href="https://aistudio.google.com/app/apikey" target="_blank" style="color: var(--teal);">Get your Gemini API key here</a>
                 </div>
                 <label style="margin-top: 10px;">
                     <input type="checkbox" id="save-key" />
@@ -273,7 +273,7 @@
 
         // Load saved API key if available
         window.addEventListener('DOMContentLoaded', () => {
-            const savedApiKey = localStorage.getItem('talka_monica_key');
+            const savedApiKey = localStorage.getItem('talka_gemini_key');
             if (savedApiKey) {
                 apiKeyInput.value = savedApiKey;
                 saveKeyCheckbox.checked = true;
@@ -283,9 +283,9 @@
         // Save API key when checkbox is changed
         saveKeyCheckbox.addEventListener('change', () => {
             if (saveKeyCheckbox.checked && apiKeyInput.value) {
-                localStorage.setItem('talka_monica_key', apiKeyInput.value);
+                localStorage.setItem('talka_gemini_key', apiKeyInput.value);
             } else {
-                localStorage.removeItem('talka_monica_key');
+                localStorage.removeItem('talka_gemini_key');
             }
         });
 
@@ -308,7 +308,7 @@
 
                 // Validate inputs
                 if (!apiKey) {
-                    throw new Error("Please enter your Monica API key");
+                    throw new Error("Please enter your Google Gemini API key");
                 }
 
                 if (!sentence) {
@@ -325,7 +325,7 @@
 
                 // Handle API key storage if checkbox is selected
                 if (saveKeyCheckbox.checked && apiKey) {
-                    localStorage.setItem('talka_monica_key', apiKey);
+                    localStorage.setItem('talka_gemini_key', apiKey);
                 }
             } catch (error) {
                 console.error('Error:', error);
@@ -361,11 +361,11 @@
             errorDiv.style.display = 'block';
         }
 
-            // API Call to Monica
+            // API Call to Google Gemini
         async function getCorrection(apiKey, tone, sentence) {
-            // Validate API key format for Monica (should start with sk-)
-            if (!apiKey || !apiKey.startsWith('sk-')) {
-                throw new Error("Invalid Monica API key format. Please enter a valid Monica API key (starts with 'sk-').");
+            // Validate API key format for Gemini (should start with AIza)
+            if (!apiKey || !apiKey.startsWith('AIza')) {
+                throw new Error("Invalid Gemini API key format. Please enter a valid Gemini API key (starts with 'AIza').");
             }
             
             const prompt = `You are Talka, a professional British English teacher who specializes in teaching Taiwanese students. You have deep knowledge of:
@@ -401,72 +401,84 @@ Explanation: [A detailed, educational explanation covering:
 Keep your explanation thorough but clear, as if teaching in a classroom.]`;
             
             try {
-                const response = await fetch('https://openapi.monica.im/v1/chat/completions', {
+                const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-exp:generateContent?key=${apiKey}`, {
                     method: 'POST',
                     headers: {
-                        'Content-Type': 'application/json',
-                        'Authorization': `Bearer ${apiKey}`
+                        'Content-Type': 'application/json'
                     },
                     body: JSON.stringify({
-                        "model": "gpt-4o",
-                        "messages": [
-                            {
-                                "role": "system",
-                                "content": "You are Talka, a professional British English teacher who specializes in teaching Taiwanese students."
-                            },
+                        "contents": [
                             {
                                 "role": "user",
-                                "content": prompt
+                                "parts": [
+                                    {
+                                        "text": prompt
+                                    }
+                                ]
                             }
                         ],
-                        "temperature": 0.7,
-                        "max_tokens": 2048
+                        "generationConfig": {
+                            "temperature": 0.7,
+                            "topK": 40,
+                            "topP": 0.95,
+                            "maxOutputTokens": 2048
+                        },
+                        "safetySettings": [
+                            {
+                                "category": "HARM_CATEGORY_HARASSMENT",
+                                "threshold": "BLOCK_ONLY_HIGH"
+                            },
+                            {
+                                "category": "HARM_CATEGORY_HATE_SPEECH",
+                                "threshold": "BLOCK_ONLY_HIGH"
+                            },
+                            {
+                                "category": "HARM_CATEGORY_SEXUALLY_EXPLICIT",
+                                "threshold": "BLOCK_ONLY_HIGH"
+                            },
+                            {
+                                "category": "HARM_CATEGORY_DANGEROUS_CONTENT",
+                                "threshold": "BLOCK_ONLY_HIGH"
+                            }
+                        ]
                     })
                 });
 
                 if (!response.ok) {
                     const errorData = await response.json().catch(() => ({}));
-                    const errorMessage = errorData.error?.message || 'Failed to get response from Monica API';
-                    const errorCode = errorData.error?.code || response.status;
-
-                    // Specific error messages for common issues
-                    if (errorMessage.includes('balance') || errorMessage.includes('not enough')) {
-                        throw new Error(`Account balance insufficient. Please add credits at https://platform.monica.im`);
-                    }
-                    if (errorCode === 401 || errorMessage.includes('unauthorized')) {
-                        throw new Error(`Invalid API key. Please check your Monica API key at https://platform.monica.im`);
-                    }
-
-                    throw new Error(`Monica API Error (${errorCode}): ${errorMessage}`);
+                    const errorMessage = errorData.error?.message || 'Failed to get response from Gemini API';
+                    throw new Error(`Gemini API Error: ${errorMessage}. Get your API key at https://aistudio.google.com/app/apikey`);
                 }
 
                 const data = await response.json();
                 console.log('Full API response:', data); // Debug the full response
 
-                if (!data.choices || data.choices.length === 0) {
+                if (!data.candidates || data.candidates.length === 0) {
                     throw new Error("No response generated. Please try again.");
                 }
 
-                // Check if the response structure is valid (OpenAI format)
-                if (!data.choices[0] || !data.choices[0].message || !data.choices[0].message.content) {
-                    console.error('Unexpected response structure:', JSON.stringify(data, null, 2));
-                    console.error('Choice:', JSON.stringify(data.choices[0], null, 2));
-                    console.error('Finish reason:', data.choices[0]?.finish_reason);
+                // Check if content was blocked by safety filters
+                if (data.candidates[0].finishReason === 'SAFETY') {
+                    console.error('Safety ratings:', data.candidates[0].safetyRatings);
+                    throw new Error("Response was blocked by safety filters. Please try rephrasing your sentence.");
+                }
 
-                    const finishReason = data.choices[0]?.finish_reason;
-                    if (finishReason === 'length') {
+                // Check if the response structure is valid (Gemini format)
+                if (!data.candidates[0] || !data.candidates[0].content || !data.candidates[0].content.parts) {
+                    console.error('Unexpected response structure:', JSON.stringify(data, null, 2));
+                    console.error('Finish reason:', data.candidates[0]?.finishReason);
+
+                    const finishReason = data.candidates[0]?.finishReason;
+                    if (finishReason === 'MAX_TOKENS') {
                         throw new Error('Response incomplete. Try a shorter sentence.');
-                    }
-                    if (finishReason === 'content_filter') {
-                        throw new Error('Response was blocked by content filters. Please try rephrasing your sentence.');
                     }
 
                     throw new Error(`API returned unexpected format. Reason: ${finishReason || 'unknown'}. Check console for details.`);
                 }
 
-                // Extract from OpenAI-compatible response format
-                const result = data.choices[0].message.content.trim();
-                console.log('Monica API response text:', result); // For debugging
+                // Extract from Gemini response format
+                const result = data.candidates[0].content.parts[0].text.trim();
+                console.log('Gemini API response text:', result); // For debugging
 
                 // Parse the response looking for Corrected: and Explanation: markers
                 // Updated regex to capture everything after "Explanation:" including newlines
@@ -485,11 +497,11 @@ Keep your explanation thorough but clear, as if teaching in a classroom.]`;
                     explanation: explanationText || "No explanation provided"
                 };
             } catch (error) {
-                console.error('Monica API call error:', error);
+                console.error('Gemini API call error:', error);
 
                 // Handle network errors
                 if (error.message === 'Failed to fetch') {
-                    throw new Error('Network error: Unable to reach Monica API. Please check your internet connection or try again later.');
+                    throw new Error('Network error: Unable to reach Gemini API. Please check your internet connection or try again later.');
                 }
 
                 // Handle CORS errors
