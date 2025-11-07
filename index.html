@@ -162,7 +162,29 @@
         .explanation {
             background: white;
             padding: 15px;
-            font-style: italic;
+            line-height: 1.8;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+        }
+
+        .explanation p {
+            margin-bottom: 12px;
+        }
+
+        .explanation strong {
+            color: var(--teal);
+            display: block;
+            margin-top: 15px;
+            margin-bottom: 5px;
+        }
+
+        .explanation ul, .explanation ol {
+            margin-left: 20px;
+            margin-bottom: 10px;
+        }
+
+        .explanation li {
+            margin-bottom: 8px;
         }
         
         .error {
@@ -242,7 +264,7 @@
                     <button class="copy-btn">Copy</button>
                 </div>
                 <div class="explanation">
-                    <p id="explanation"></p>
+                    <div id="explanation"></div>
                 </div>
             </div>
         </main>
@@ -320,7 +342,11 @@
                 
                 // Display results
                 correctedSentence.textContent = data.corrected;
-                explanation.textContent = data.explanation;
+
+                // Format explanation with HTML for better readability
+                const formattedExplanation = formatExplanation(data.explanation);
+                explanation.innerHTML = formattedExplanation;
+
                 resultDiv.style.display = 'block';
 
                 // Handle API key storage if checkbox is selected
@@ -359,6 +385,31 @@
         function showError(message) {
             errorDiv.textContent = message;
             errorDiv.style.display = 'block';
+        }
+
+        // Format explanation text with proper HTML structure
+        function formatExplanation(text) {
+            // Escape HTML to prevent XSS, but preserve structure
+            let formatted = text
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;');
+
+            // Convert markdown-style bold to HTML
+            formatted = formatted.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
+
+            // Add line breaks for better readability
+            formatted = formatted.replace(/\n\n/g, '</p><p>');
+            formatted = formatted.replace(/\n- /g, '<br>• ');
+            formatted = formatted.replace(/\n\d+\. /g, '<br>');
+
+            // Wrap in paragraph tags
+            formatted = '<p>' + formatted + '</p>';
+
+            // Clean up empty paragraphs
+            formatted = formatted.replace(/<p><\/p>/g, '');
+
+            return formatted;
         }
 
             // API Call to Google Gemini
