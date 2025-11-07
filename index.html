@@ -425,9 +425,19 @@ Keep your explanation thorough but clear, as if teaching in a classroom.]`;
                 });
 
                 if (!response.ok) {
-                    const errorData = await response.json();
+                    const errorData = await response.json().catch(() => ({}));
                     const errorMessage = errorData.error?.message || 'Failed to get response from Monica API';
-                    throw new Error(`Monica API Error: ${errorMessage}. Get your API key at https://platform.monica.im`);
+                    const errorCode = errorData.error?.code || response.status;
+
+                    // Specific error messages for common issues
+                    if (errorMessage.includes('balance') || errorMessage.includes('not enough')) {
+                        throw new Error(`Account balance insufficient. Please add credits at https://platform.monica.im`);
+                    }
+                    if (errorCode === 401 || errorMessage.includes('unauthorized')) {
+                        throw new Error(`Invalid API key. Please check your Monica API key at https://platform.monica.im`);
+                    }
+
+                    throw new Error(`Monica API Error (${errorCode}): ${errorMessage}`);
                 }
 
                 const data = await response.json();
@@ -476,6 +486,17 @@ Keep your explanation thorough but clear, as if teaching in a classroom.]`;
                 };
             } catch (error) {
                 console.error('Monica API call error:', error);
+
+                // Handle network errors
+                if (error.message === 'Failed to fetch') {
+                    throw new Error('Network error: Unable to reach Monica API. Please check your internet connection or try again later.');
+                }
+
+                // Handle CORS errors
+                if (error.name === 'TypeError' && error.message.includes('fetch')) {
+                    throw new Error('Connection error: Please check your internet connection and try again.');
+                }
+
                 throw error;
             }
         }
