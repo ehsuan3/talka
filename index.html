@@ -510,7 +510,19 @@ Keep your explanation thorough but clear, as if teaching in a classroom.]`;
                 if (!response.ok) {
                     const errorData = await response.json().catch(() => ({}));
                     const errorMessage = errorData.error?.message || 'Failed to get response from Gemini API';
-                    throw new Error(`Gemini API Error: ${errorMessage}. Get your API key at https://aistudio.google.com/app/apikey`);
+
+                    // Specific handling for quota errors
+                    if (errorMessage.includes('quota') || errorMessage.includes('Quota exceeded')) {
+                        if (errorMessage.includes('rate_limit') || errorMessage.includes('requests')) {
+                            throw new Error('Rate limit exceeded: Too many requests. Gemini free tier allows 15 requests per minute. Please wait 1 minute and try again.');
+                        } else if (errorMessage.includes('0/day') || errorMessage.includes('limit: 0')) {
+                            throw new Error('Daily quota exhausted: Your API key has used up its daily free quota. It will reset at midnight UTC. Try again tomorrow or upgrade your plan.');
+                        } else {
+                            throw new Error(`Quota limit reached: ${errorMessage.split('.')[0]}. Please wait or check your usage at https://ai.google.dev/usage`);
+                        }
+                    }
+
+                    throw new Error(`Gemini API Error: ${errorMessage}`);
                 }
 
                 const data = await response.json();
