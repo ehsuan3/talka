@@ -511,14 +511,19 @@ Keep your explanation thorough but clear, as if teaching in a classroom.]`;
                     const errorData = await response.json().catch(() => ({}));
                     const errorMessage = errorData.error?.message || 'Failed to get response from Gemini API';
 
+                    console.error('Full error response:', errorData); // Debug full error
+
                     // Specific handling for quota errors
                     if (errorMessage.includes('quota') || errorMessage.includes('Quota exceeded')) {
-                        if (errorMessage.includes('rate_limit') || errorMessage.includes('requests')) {
-                            throw new Error('Rate limit exceeded: Too many requests. Gemini free tier allows 15 requests per minute. Please wait 1 minute and try again.');
+                        if (errorMessage.includes('rate_limit') || errorMessage.includes('requests') || errorMessage.includes('RPM')) {
+                            // Extract wait time if available
+                            const waitMatch = errorMessage.match(/retry in (\d+\.?\d*)/i);
+                            const waitTime = waitMatch ? Math.ceil(parseFloat(waitMatch[1])) : 60;
+                            throw new Error(`Rate limit: Too many requests. Wait ${waitTime} seconds and try again. Free tier: 15 requests/minute. Check usage: https://ai.google.dev/usage`);
                         } else if (errorMessage.includes('0/day') || errorMessage.includes('limit: 0')) {
-                            throw new Error('Daily quota exhausted: Your API key has used up its daily free quota. It will reset at midnight UTC. Try again tomorrow or upgrade your plan.');
+                            throw new Error('API key has zero quota. Create a new API key at https://aistudio.google.com/app/apikey (use "Create API key in new project")');
                         } else {
-                            throw new Error(`Quota limit reached: ${errorMessage.split('.')[0]}. Please wait or check your usage at https://ai.google.dev/usage`);
+                            throw new Error(`Quota error: ${errorMessage}`);
                         }
                     }
 
